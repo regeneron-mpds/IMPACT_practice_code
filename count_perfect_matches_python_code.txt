@@ -1,0 +1,46 @@
+import sys
+import re
+import gzip
+import ast
+import pandas as pd
+
+sampleid = sys.argv[1]
+ref = sys.argv[2]
+fq = sys.argv[3]
+outfile = sys.argv[4]
+wdir = sys.argv[5]
+refdir = sys.argv[6]
+
+refdir=wdir + ''
+
+#open reference into dictionary
+with open (refdir + '/' + ref) as r:
+    reference = r.read()
+ast_reference = ast.literal_eval(reference)
+
+#open fq into string
+step = 4
+list_FASTQ=[]
+with gzip.open(fq ,'rt', encoding='utf8', errors='ignore') as handle:
+    for lineno, line in enumerate(handle, 1):
+        if lineno % step-2 == 0: 
+            list_FASTQ.append(line[0:150])
+            
+string_list_FASTQ = ',' .join(str(element) for element in list_FASTQ)
+
+#findall matches
+Matches = {}
+for match_name, value in ast_reference.items():
+    match_2=len(re.findall(value, string_list_FASTQ))
+    Matches[match_name]=match_2
+
+# make dataframe
+match_df = pd.DataFrame(data=Matches.values(), index=Matches.keys())
+
+#write dataframe to csv file
+match_df.to_csv(f'(insert file name)', mode='w')
+
+
+##write matches to an output file
+# with open(outfile + '\' + sampleid + '.txt', 'w') as ref:
+#     ref.write(str(Matches))
